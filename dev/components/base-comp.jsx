@@ -2,8 +2,6 @@ export default class BaseComponent extends React.Component {
   constructor(props) {
     super(props);
     this.state = {};
-    this._bind = this._bind.bind(this);
-    this._bind('refresh');
   }
 
   // bind function to classes which will be extended from this base class
