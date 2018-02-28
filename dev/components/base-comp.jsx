@@ -18,15 +18,15 @@ export default class BaseComponent extends React.Component {
   // use attibute in options parameter or use original state object to set state easily
   refresh(options) {
     const stateKeys = Object.keys(this.state);
-    const refreshObject = {};
-    const opt = options || {};
+    const freshState = {};
+    const _options = options || {};
     for (const key of stateKeys) {
-      if (opt.hasOwnProperty(key)) {
-        refreshObject[key] = opt[key];
+      if (_options.hasOwnProperty(key)) {
+        freshState[key] = _options[key];
       } else {
-        refreshObject[key] = this.state[key];
+        freshState[key] = this.state[key];
       }
     }
-    this.setState(refreshObject);
+    this.setState(freshState);
   }
 };
