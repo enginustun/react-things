@@ -1,20 +1,19 @@
 export default class BaseComponent extends React.Component {
   constructor(props) {
     super(props);
-
+    this.state = {};
     this._bind = this._bind.bind(this);
     this._bind('refresh');
   }
 
   // bind function to classes which will be extended from this base class
   // use this function to bind functions to be able to access 'this' parameter in them
-  _bind() {
-    for (let i = 0; i < arguments.length; i++) {
-      const func = arguments[i];
+  _bind(...funcs) {
+    funcs.forEach((func) => {
       if (typeof func === 'string' && this[func] && this[func].bind) {
         this[func] = this[func].bind(this);
       }
-    }
+    });
   }
 
   // generel refresh function
@@ -24,7 +23,7 @@ export default class BaseComponent extends React.Component {
     const refreshObject = {};
     const opt = options || {};
     for (const key of stateKeys) {
-      if (opt[key]) {
+      if (opt.hasOwnProperty(key)) {
         refreshObject[key] = opt[key];
       } else {
         refreshObject[key] = this.state[key];
