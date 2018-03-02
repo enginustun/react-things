@@ -1,0 +1,31 @@
+@import "base";
+
+body {
+  background-color: #fff;
+  padding: 10px;
+  margin: 0;
+}
+
+.crud-comp-search-title{
+  background: #eee;
+  border: 1px solid #ddd;
+  border-bottom: none;
+  font-weight: 500;
+  @include p(3px 3px 3px 10px);
+}
+
+.crud-comp-search-panel{
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  @include p(10px);
+}
+
+.crud-comp-search-panel .search-panel-form-item{
+  @include mb(5px);
+}
+
+.crud-comp-search-buttons button{
+  float: right;
+}
+
+.mr10 { @include mr(10px) }

@@ -1,0 +1,43 @@
+@mixin p($values...) {
+  @each $value in $values {
+    padding: #{$value};
+  }
+}
+
+@mixin pt($value) {
+  padding-top: $value;
+}
+
+@mixin pr($value) {
+  padding-right: $value;
+}
+
+@mixin pb($value) {
+  padding-bottom: $value;
+}
+
+@mixin pl($value) {
+  padding-left: $value;
+}
+
+@mixin m($values...) {
+  @each $value in $values {
+    margin: #{$value};
+  }
+}
+
+@mixin mt($value) {
+  margin-top: $value;
+}
+
+@mixin mr($value) {
+  margin-right: $value;
+}
+
+@mixin mb($value) {
+  margin-bottom: $value;
+}
+
+@mixin ml($value) {
+  margin-left: $value;
+}

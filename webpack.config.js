@@ -4,28 +4,41 @@ const ExtractTextPlugin = require("extract-text-webpack-plugin");
 
 const BUILD_DIR = path.resolve(__dirname, 'dist');
 const APP_DIR = path.resolve(__dirname, 'dev');
+const DEMO_DIR = path.resolve(__dirname, 'demo');
 const prod = process.argv.indexOf('-p') !== -1;
 
 const config = {
-  entry: path.resolve(APP_DIR, 'index.js'),
+  entry: {
+    'react-things': path.resolve(APP_DIR, 'js', 'index.js'),
+    'demo': path.resolve(DEMO_DIR, 'demo.js')
+  },
   output: {
     path: BUILD_DIR,
-    filename: prod ? 'react-things.min.js' : 'react-things.js',
+    filename: prod ? '[name].min.js' : '[name].js',
     library: 'react-things',
-    libraryTarget: 'umd',
-    umdNamedDefine: true,
+    libraryTarget: 'umd'
   },
   module: {
-    loaders: [
+    rules: [
       {
-        test: /\.js?/,
-        include: APP_DIR,
-        loader: 'babel-loader',
+        test: /\.jsx?/,
+        include: [APP_DIR],
+        loader: 'babel-loader'
       },
-    ],
+      {
+        test: /\.s?css$/,
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: ['css-loader', 'sass-loader']
+        })
+      }
+    ]
+  },
+  resolve: {
+    extensions: ['.js', '.jsx', '.json', '.css']
   },
   plugins: [
-    new ExtractTextPlugin('style.bundle.css'), // CSS will be extracted to this bundle file -> ADDED IN THIS STEP
+    new ExtractTextPlugin('[name].css'), // CSS will be extracted to this bundle file -> ADDED IN THIS STEP
     new webpack.ProvidePlugin({
       React: 'react',
       ReactDOM: 'react-dom'
