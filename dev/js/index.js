@@ -11,18 +11,3 @@ Object.defineProperty(components, 'CRUDComponent', {
 });
 
 module.exports = components;
-
-ReactDOM.render(
-  <CRUDComponent
-    model={Post}
-    searchTitle="Search Criterias"
-    searchFields={[
-      'title',
-      'body',
-      'userId',
-      'releaseDate',
-      'approved'
-    ]}
-  />,
-  document.getElementById('app')
-)

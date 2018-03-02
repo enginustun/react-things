@@ -55,7 +55,7 @@ Post.setConfig('fields', {
     }
   },
   approved: {
-    title: 'Is Aproved',
+    title: 'Is Approved',
     searchInput: {
       type: 'checkbox',
       defaultValue: false
