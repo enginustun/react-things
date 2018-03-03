@@ -22,7 +22,7 @@ const config = {
     rules: [
       {
         test: /\.jsx?/,
-        include: [APP_DIR],
+        exclude: path.resolve(__dirname, 'node_modules'),
         loader: 'babel-loader'
       },
       {
