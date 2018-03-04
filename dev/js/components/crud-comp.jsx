@@ -1,7 +1,8 @@
+import React from 'react';
+import ReactDOM from 'react-dom';
 import BaseComp from './base-comp.jsx';
 import { RestBaseModel } from 'rest-in-model';
 import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table } from 'antd';
-import 'antd/dist/antd.css';
 import moment from 'moment';
 const FormItem = Form.Item;
 
