@@ -1,19 +1,19 @@
+/* eslint no-param-reassign: ["error", { "props": false }] */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_bind"] }] */
 import React from 'react';
-import ReactDOM from 'react-dom';
-import BaseComp from './base-comp.jsx';
+import moment from 'moment';
 import { RestBaseModel } from 'rest-in-model';
 import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table } from 'antd';
-import moment from 'moment';
-const FormItem = Form.Item;
+import BaseComp from './base-comp.jsx';
+
+// const FormItem = Form.Item;
 
 const searchFormItemLayout = {
   labelCol: { span: 8 },
-  wrapperCol: { span: 16 }
-}
+  wrapperCol: { span: 16 },
+};
 
-const hasProperty = (obj, propName) => {
-  return Object.getOwnPropertyNames(obj).indexOf(propName) > -1;
-}
+const hasProperty = (obj, propName) => Object.getOwnPropertyNames(obj).indexOf(propName) > -1;
 
 export default class CrudComponent extends BaseComp {
   constructor(props) {
@@ -21,7 +21,7 @@ export default class CrudComponent extends BaseComp {
     /**
      * props: {
      *  model: instance of RestBaseModel,
-     *  sortAttributeName: string, 
+     *  sortAttributeName: string,
      *  sortOrderAttributeName: string,
      *  sortQueryType: string,
      *  sortOrderAscText: string,
@@ -52,7 +52,7 @@ export default class CrudComponent extends BaseComp {
       searchListDatas: {},
       searchCriterias: {
         [pageAttributeName]: 1,
-        [pageLimitAttributeName]: 10
+        [pageLimitAttributeName]: 10,
       },
 
       // sort
@@ -74,21 +74,21 @@ export default class CrudComponent extends BaseComp {
         current: 1,
         pageSize: 10,
         pageSizeOptions: ['10', '25', '50'],
-        total: 0
+        total: 0,
       },
 
       tableLoading: false,
       tableData: [],
       tableColumns: [],
+    };
 
-    }
     if (hasProperty(props, 'pageSizeOptions')) {
       this.state.tablePagination.pageSizeOptions = props.pageSizeOptions;
     }
     if (this.state.tablePagination.pageSizeOptions) {
       this.state.tablePagination.showSizeChanger = true;
       if (!Array.isArray(this.state.tablePagination.pageSizeOptions)) {
-        this.state.tablePagination.pageSizeOptions = ['10', '25', '50']
+        this.state.tablePagination.pageSizeOptions = ['10', '25', '50'];
       }
     } else {
       this.state.tablePagination.pageSizeOptions = [];
@@ -103,7 +103,7 @@ export default class CrudComponent extends BaseComp {
         this.state.showSearchFields = true;
 
         // TODO: handle initial select/tree values etc.
-        this.state.searchFields.map((searchField, i) => {
+        this.state.searchFields.forEach((searchField) => {
           const searchFieldName = searchField.name || searchField;
           const fieldConfig = this.state.modelConfig.fields[searchFieldName];
           fieldConfig.searchInput = fieldConfig.searchInput || {};
@@ -122,7 +122,7 @@ export default class CrudComponent extends BaseComp {
       }
 
       if (Array.isArray(props.tableColumns)) {
-        for (let i = 0; i < props.tableColumns.length; i++) {
+        for (let i = 0; i < props.tableColumns.length; i += 1) {
           const column = props.tableColumns[i];
           const columnName = column.name || column;
           const fieldConfig = this.state.modelConfig.fields[columnName] || {};
@@ -130,7 +130,7 @@ export default class CrudComponent extends BaseComp {
             title: fieldConfig.title || columnName,
             dataIndex: columnName,
             render: column.render,
-            sorter: column.sorter || false
+            sorter: column.sorter || false,
           };
           this.state.tableColumns.push(columnInfo);
         }
@@ -138,7 +138,7 @@ export default class CrudComponent extends BaseComp {
     }
   }
 
-  // verify that is model extends from RestBaseModel 
+  // verify that is model extends from RestBaseModel
   // assign modelClass attribte of state
   modelVerification(model) {
     if (model && model.constructor === RestBaseModel.constructor) {
@@ -146,10 +146,11 @@ export default class CrudComponent extends BaseComp {
       this.state.modelConfig = this.state.modelClass[`${this.state.modelClass.name}_config`];
       return true;
     }
+    return false;
   }
 
   handleSearchInputChange(e, fieldConfig, searchFieldName) {
-    var self = this;
+    const self = this;
 
     // handle search inputs' change events by type
     if (fieldConfig.searchInput.type === 'select') {
@@ -160,37 +161,34 @@ export default class CrudComponent extends BaseComp {
       if (e instanceof moment) {
         self.state.searchCriterias[searchFieldName] = e.format(fieldConfig.searchInput.format);
       } else { self.state.searchCriterias[searchFieldName] = null; }
+    } else if (e.target.value) {
+      self.state.searchCriterias[searchFieldName] = e.target.value;
     } else {
-      // this exceptional case for empty strings
-      // no need to set search criteria for empty string so delete it
-      if (e.target.value) {
-        self.state.searchCriterias[searchFieldName] = e.target.value;
-      } else {
-        delete self.state.searchCriterias[searchFieldName];
-      }
+      delete self.state.searchCriterias[searchFieldName];
     }
   }
 
-  handleSearch(e) {
-    var self = this;
+  handleSearch() {
+    const self = this;
     self.state.tableLoading = true;
     self.refresh();
 
     // get page and page_limit values from tablePagination object of state
     self.state.searchCriterias[self.state.pageAttributeName] = self.state.tablePagination.current;
-    self.state.searchCriterias[self.state.pageLimitAttributeName] = self.state.tablePagination.pageSize;
+    self.state.searchCriterias[self.state.pageLimitAttributeName] =
+      self.state.tablePagination.pageSize;
 
     // send request with current searchCriterias to fill state.tableData with records in response
     self.state.modelClass.all({
       resultList: self.state.tableData,
-      queryParams: self.state.searchCriterias
-    }).then(({ resultList, response, request }) => {
+      queryParams: self.state.searchCriterias,
+    }).then(({ response, request }) => {
       self.state.tableLoading = false;
 
       // decide resource and get total record count from header or data
       if (self.state.totalCountFrom === 'header') {
         self.state.tablePagination.total = +request.getResponseHeader(self.state.totalCountField);
-      } else if(self.state.totalCountFrom === 'response') {
+      } else if (self.state.totalCountFrom === 'response') {
         self.state.tablePagination.total = +response(self.state.totalCountField);
       }
       self.refresh();
@@ -200,8 +198,8 @@ export default class CrudComponent extends BaseComp {
     });
   }
 
-  handleSearchReset(e) {
-    var self = this;
+  handleSearchReset() {
+    const self = this;
 
     // reset curren page to 1
     self.state.tablePagination.current = 1;
@@ -209,10 +207,10 @@ export default class CrudComponent extends BaseComp {
     self.state.searchCriterias = {
       [self.state.pageAttributeName]: 1,
       // keep page limit parameter
-      [self.state.pageLimitAttributeName]: self.state.tablePagination.pageSize
+      [self.state.pageLimitAttributeName]: self.state.tablePagination.pageSize,
     };
 
-    self.state.searchFields.map((searchField, i) => {
+    self.state.searchFields.forEach((searchField) => {
       const searchFieldName = searchField.name || searchField;
       const fieldConfig = self.state.modelConfig.fields[searchFieldName];
 
@@ -221,7 +219,10 @@ export default class CrudComponent extends BaseComp {
         this.state.searchCriterias[searchFieldName] = fieldConfig.searchInput.defaultValue;
       }
       if (self[`searchFieldCompRef_${searchFieldName}`]) {
-        ReactDOM.findDOMNode(self[`searchFieldCompRef_${searchFieldName}`]).value = '';
+        const { input } = self[`searchFieldCompRef_${searchFieldName}`];
+        if (input) {
+          input.value = '';
+        }
       }
     });
     self.handleSearch();
@@ -249,12 +250,69 @@ export default class CrudComponent extends BaseComp {
 
   componentDidMount() { this.handleSearch(); }
 
+  renderSearchInput(fieldConfig, searchFieldName) {
+    const self = this;
+    switch (fieldConfig.searchInput.type) {
+      // render select search input
+      case 'select':
+        return <Select
+          value={self.state.searchCriterias[searchFieldName]}
+          allowClear={true}
+          onChange={(e) => {
+            self.handleSearchInputChange(e, fieldConfig, searchFieldName);
+            self.refresh();
+          }}
+          placeholder={fieldConfig.placeholder} >
+          {self.state.searchListDatas[searchFieldName].map((data, j) => <Select.Option
+            key={`search-select-field-${j}`}
+            value={data[fieldConfig.searchInput.optionValueField || data.title || data]}>
+            {data[fieldConfig.searchInput.optionTitleField || data.title || data]}
+          </Select.Option>)}
+        </Select>;
+      // render checkbox search input
+      case 'checkbox':
+        return <Checkbox
+          checked={self.state.searchCriterias[searchFieldName]}
+          style={{ top: '13px' }}
+          onChange={(e) => {
+            self.handleSearchInputChange(e, fieldConfig, searchFieldName);
+            self.refresh();
+          }} />;
+      // render date search input
+      case 'date':
+        return <DatePicker
+          value={self.state.searchCriterias[searchFieldName] ?
+            moment(self.state.searchCriterias[searchFieldName]) :
+            undefined}
+          onChange={(e) => {
+            self.handleSearchInputChange(e, fieldConfig, searchFieldName);
+            self.refresh();
+          }}
+          format={fieldConfig.searchInput.format}
+          showTime={fieldConfig.searchInput.showTime}
+          style={{ width: '100%' }} />;
+      // render text search input as default
+      default:
+        return <Input
+          ref={(searchFieldCompRef) => { self[`searchFieldCompRef_${searchFieldName}`] = searchFieldCompRef; }}
+          onChange={e => self.handleSearchInputChange(e, fieldConfig, searchFieldName)}
+          type={fieldConfig.searchInput.type || 'text'}
+          placeholder={fieldConfig.placeholder}
+          onKeyUp={(e) => {
+            if (e.nativeEvent.keyCode === 13) {
+              self.handleSearch();
+            }
+          }} />;
+    }
+  }
+
   render() {
     const self = this;
 
     // to find and show sort field's direction
-    self.state.tableColumns.map((column) => {
-      column.sortOrder = self.state.searchCriterias[self.state.sortAttributeName] === column.dataIndex && self.state.sorter.order;
+    self.state.tableColumns.forEach((column) => {
+      column.sortOrder = self.state.searchCriterias[self.state.sortAttributeName] ===
+        column.dataIndex && self.state.sorter.order;
     });
 
     return (<div>
@@ -277,44 +335,11 @@ export default class CrudComponent extends BaseComp {
                           {...searchFormItemLayout}
                           label={fieldConfig.title || searchFieldName}>
 
-                          { // if there is render method passed to component display it else display auto-generated input
-                            searchField.render && searchField.render.call ? searchField.render.call(self, self.state.searchCriterias) :
-                              fieldConfig.searchInput.type === 'select' ?
-                                // render select search input
-                                <Select
-                                  value={self.state.searchCriterias[searchFieldName]}
-                                  allowClear={true}
-                                  onChange={(e) => { self.handleSearchInputChange(e, fieldConfig, searchFieldName); self.refresh(); }}
-                                  placeholder={fieldConfig.placeholder} >
-                                  {self.state.searchListDatas[searchFieldName].map((data, j) => {
-                                    return <Select.Option
-                                      key={`search-select-field-${i}-${j}`}
-                                      value={data[fieldConfig.searchInput.optionValueField || data.title || data]}>
-                                      {data[fieldConfig.searchInput.optionTitleField || data.title || data]}
-                                    </Select.Option>;
-                                  })}
-                                </Select> :
-                                fieldConfig.searchInput.type === 'checkbox' ?
-                                  // render checkbox search input
-                                  <Checkbox
-                                    checked={self.state.searchCriterias[searchFieldName]}
-                                    style={{ top: '13px' }}
-                                    onChange={(e) => { self.handleSearchInputChange(e, fieldConfig, searchFieldName); self.refresh(); }} /> :
-                                  fieldConfig.searchInput.type === 'date' ?
-                                    <DatePicker
-                                      value={self.state.searchCriterias[searchFieldName] ?
-                                        moment(self.state.searchCriterias[searchFieldName]) :
-                                        undefined}
-                                      onChange={(e) => { self.handleSearchInputChange(e, fieldConfig, searchFieldName); self.refresh(); }}
-                                      format={fieldConfig.searchInput.format}
-                                      showTime={fieldConfig.searchInput.showTime}
-                                      style={{ width: '100%' }} /> :
-                                    // render input search input
-                                    <Input
-                                      ref={(searchFieldCompRef) => { self[`searchFieldCompRef_${searchFieldName}`] = searchFieldCompRef; }}
-                                      onChange={(e) => self.handleSearchInputChange(e, fieldConfig, searchFieldName)}
-                                      type={fieldConfig.searchInput.type || 'text'}
-                                      placeholder={fieldConfig.placeholder} />
+                          { // if there is render method passed to component display it
+                            // else display auto-generated input
+                            searchField.render && searchField.render.call ?
+                              searchField.render.call(self, self.state.searchCriterias) :
+                              self.renderSearchInput(fieldConfig, searchFieldName)
                           }
                         </Form.Item>
                       </Col>
@@ -348,4 +373,4 @@ export default class CrudComponent extends BaseComp {
       </div>
     </div>);
   }
-};
+}

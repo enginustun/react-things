@@ -1,4 +1,5 @@
 import React from 'react';
+
 export default class BaseComponent extends React.Component {
   constructor(props) {
     super(props);
@@ -20,14 +21,15 @@ export default class BaseComponent extends React.Component {
   refresh(options) {
     const stateKeys = Object.keys(this.state);
     const freshState = {};
-    const _options = options || {};
-    for (const key of stateKeys) {
-      if (_options.hasOwnProperty(key)) {
-        freshState[key] = _options[key];
+    const opt = options || {};
+    for (let i = 0; i < stateKeys.length; i += 1) {
+      const key = stateKeys[i];
+      if (Object.prototype.hasOwnProperty.call(opt, key)) {
+        freshState[key] = opt[key];
       } else {
         freshState[key] = this.state[key];
       }
     }
     this.setState(freshState);
   }
-};
+}

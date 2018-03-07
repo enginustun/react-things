@@ -1,20 +1,19 @@
-import "../css/react-things.scss";
-const components = {};
+import '../css/react-things.scss';
 
-const warnReadonly = () => { console.warn('You cannot set readonly property.'); }
+const components = {};
 
 Object.defineProperty(components, 'BaseComponent', {
   configurable: false,
   enumerable: true,
-  get: () => { return require("./components/base-comp.jsx").default; },
-  set: warnReadonly
+  get: () => require('./components/base-comp.jsx').default, // eslint-disable-line global-require
+  set: undefined,
 });
 
 Object.defineProperty(components, 'CRUDComponent', {
   configurable: false,
   enumerable: true,
-  get: () => { return require("./components/crud-comp.jsx").default; },
-  set: warnReadonly
+  get: () => require('./components/crud-comp.jsx').default, // eslint-disable-line global-require
+  set: undefined,
 });
 
 module.exports = components;
