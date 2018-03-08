@@ -11,13 +11,18 @@ body {
   border: 1px solid #ddd;
   border-bottom: none;
   font-weight: 500;
-  @include p(3px 3px 3px 10px);
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+  position: relative;
+  top: 2px;
+  @include p(3px 3px 5px 10px);
 }
 
 .crud-comp-search-panel{
   background: #f5f5f5;
   border: 1px solid #ddd;
-  @include p(10px);
+  border-radius: 4px;
+  @include p(15px 10px 10px 10px);
   @include mb(10px);
 }
 
