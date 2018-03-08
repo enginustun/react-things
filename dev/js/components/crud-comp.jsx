@@ -3,14 +3,22 @@
 import React from 'react';
 import moment from 'moment';
 import { RestBaseModel } from 'rest-in-model';
-import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table } from 'antd';
+import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider } from 'antd';
 import BaseComp from './base-comp.jsx';
+import helper from '../common/helper';
 
 // const FormItem = Form.Item;
 
 const searchFormItemLayout = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
+};
+
+const availableActionKeys = ['update', 'view', 'delete'];
+const actionIconTypes = {
+  update: 'edit',
+  view: 'search',
+  delete: 'delete',
 };
 
 const hasProperty = (obj, propName) => Object.getOwnPropertyNames(obj).indexOf(propName) > -1;
@@ -35,7 +43,11 @@ export default class CrudComponent extends BaseComp {
      *  tableBordered: boolean,
      *  tableSize: string,
      *  totalCountFrom: string,
-     *  totalCountField: string
+     *  totalCountField: string,
+     *  actionsTitle: string,
+     *  actions: {},
+     *  customActions: {},
+     *  customTopActions: {}
      * }
      */
 
@@ -80,6 +92,10 @@ export default class CrudComponent extends BaseComp {
       tableLoading: false,
       tableData: [],
       tableColumns: [],
+
+      actions: props.actions || {},
+      customActions: props.customActions || {},
+      customTopActions: props.customTopActions || {},
     };
 
     if (hasProperty(props, 'pageSizeOptions')) {
@@ -95,7 +111,15 @@ export default class CrudComponent extends BaseComp {
     }
 
     // bind functions to access 'this' parameter in them.
-    this._bind('handleSearchInputChange', 'handleSearch', 'handleSearchReset', 'handleTableChange');
+    this._bind(
+      'handleSearchInputChange',
+      'handleSearch',
+      'handleSearchReset',
+      'handleTableChange',
+      'handleUpdate',
+      'handleView',
+      'handleDelete' // eslint-disable-line comma-dangle
+    );
 
     if (this.modelVerification(props.model)) {
       // check if any searchField exists, if so we can show search form
@@ -134,6 +158,32 @@ export default class CrudComponent extends BaseComp {
           };
           this.state.tableColumns.push(columnInfo);
         }
+        const customActionKeys = Object.keys(this.state.customActions);
+        const actionsRender = (record) => {
+          const actionKeys = Object.keys(this.state.actions).filter(key =>
+            key !== 'add' || availableActionKeys.indexOf(key) > -1);
+          return <div>
+            {actionKeys.map((actionKey, i) => <span key={`actions-${i}`}>
+              <a onClick={() => {
+                this[`handle${helper.strings.capitalizeFirstLetter(actionKey)}`].call(this, record);
+              }}>
+                <Icon style={{ marginRight: '5px' }}
+                  type={actionIconTypes[actionKey]} />
+                {this.state.actions[actionKey].title || actionKey}
+              </a>
+              {i < actionKeys.length - 1 ? <Divider type="veritcal" /> : null}
+            </span>)}
+          </div>;
+        };
+        if (customActionKeys.length > 0 || this.state.actions.update ||
+          this.state.actions.view || this.state.actions.delete) {
+          const columnInfo = {
+            title: props.actionsTitle || 'Actions',
+            dataIndex: 'actions',
+            render: actionsRender,
+          };
+          this.state.tableColumns.push(columnInfo);
+        }
       }
     }
   }
@@ -147,6 +197,21 @@ export default class CrudComponent extends BaseComp {
       return true;
     }
     return false;
+  }
+
+  handleUpdate() {
+    const self = this;
+    console.log('handle update', self);
+  }
+
+  handleView() {
+    const self = this;
+    console.log('handle view', self);
+  }
+
+  handleDelete() {
+    const self = this;
+    console.log('handle delete', self);
   }
 
   handleSearchInputChange(e, fieldConfig, searchFieldName) {
@@ -362,6 +427,18 @@ export default class CrudComponent extends BaseComp {
       }
       {/* List panel */}
       <div className="crud-comp-list-panel">
+        {
+          self.state.actions.add ?
+            <div className="crud-comp-top-actions">
+              <a href="#"
+                onClick={() => {
+                  // todo: open addUpdate modal or form
+                }}>
+                <Icon type="plus" />
+                {self.state.actions.add.title || 'Add Record'}
+              </a>
+            </div> : null
+        }
         <Table rowKey={record => record.id}
           loading={self.state.tableLoading}
           pagination={self.state.tablePagination}

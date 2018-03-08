@@ -34,4 +34,14 @@ body {
   float: right;
 }
 
+.crud-comp-top-actions{
+  padding: 5px 5px 8px 5px;
+  border: 1px solid #efefef;
+  border-bottom: none;
+  position: relative;
+  top: 3px;
+  border-top-right-radius: 4px;
+  border-top-left-radius: 4px;
+}
+
 .mr10 { @include mr(10px) }
