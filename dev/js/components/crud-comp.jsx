@@ -3,7 +3,7 @@
 import React from 'react';
 import moment from 'moment';
 import { RestBaseModel } from 'rest-in-model';
-import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider } from 'antd';
+import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider, Popconfirm } from 'antd';
 import BaseComp from './base-comp.jsx';
 import helper from '../common/helper';
 
@@ -163,16 +163,8 @@ export default class CrudComponent extends BaseComp {
           const actionKeys = Object.keys(this.state.actions).filter(key =>
             key !== 'add' || availableActionKeys.indexOf(key) > -1);
           return <div>
-            {actionKeys.map((actionKey, i) => <span key={`actions-${i}`}>
-              <a onClick={() => {
-                this[`handle${helper.strings.capitalizeFirstLetter(actionKey)}`].call(this, record);
-              }}>
-                <Icon style={{ marginRight: '5px' }}
-                  type={actionIconTypes[actionKey]} />
-                {this.state.actions[actionKey].title || actionKey}
-              </a>
-              {i < actionKeys.length - 1 ? <Divider type="veritcal" /> : null}
-            </span>)}
+            {actionKeys.map((actionKey, i) =>
+              this.generateActionButton(record, actionKey, i, actionKeys.length))}
           </div>;
         };
         if (customActionKeys.length > 0 || this.state.actions.update ||
@@ -186,6 +178,35 @@ export default class CrudComponent extends BaseComp {
         }
       }
     }
+  }
+
+  generateActionButton(record, key, index, total) {
+    if (key === 'delete') {
+      return <Popconfirm key={`actions-${index}`}
+        onConfirm={() => {
+          this[`handle${helper.strings.capitalizeFirstLetter(key)}`].call(this, record);
+        }}
+        title={this.state.actions[key].confirmText || 'Are you sure want to delete this record?'}
+        okText={this.state.actions[key].okText || 'Yes'}
+        cancelText={this.state.actions[key].cancelText || 'No'}>
+        <a>
+          <Icon style={{ marginRight: '5px' }}
+            type={actionIconTypes[key]} />
+          {this.state.actions[key].title || key}
+        </a>
+        {index < total - 1 ? <Divider type="veritcal" /> : null}
+      </Popconfirm>;
+    }
+    return <span key={`actions-${index}`}>
+      <a onClick={() => {
+        this[`handle${helper.strings.capitalizeFirstLetter(key)}`].call(this, record);
+      }}>
+        <Icon style={{ marginRight: '5px' }}
+          type={actionIconTypes[key]} />
+        {this.state.actions[key].title || key}
+      </a>
+      {index < total - 1 ? <Divider type="veritcal" /> : null}
+    </span>;
   }
 
   // verify that is model extends from RestBaseModel
