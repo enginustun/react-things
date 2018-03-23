@@ -129,8 +129,8 @@ export default class CrudComponent extends BaseComp {
         // TODO: handle initial select/tree values etc.
         this.state.searchFields.forEach((searchField) => {
           const searchFieldName = searchField.name || searchField;
-          const fieldConfig = this.state.modelConfig.fields[searchFieldName];
-          fieldConfig.searchInput = fieldConfig.searchInput || {};
+          const fieldConfig = this.state.modelConfig.fields[searchFieldName] || {};
+          fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
 
           if (fieldConfig.searchInput.type === 'select') {
             if (fieldConfig.searchInput.dataSource) {
@@ -312,7 +312,8 @@ export default class CrudComponent extends BaseComp {
 
     self.state.searchFields.forEach((searchField) => {
       const searchFieldName = searchField.name || searchField;
-      const fieldConfig = self.state.modelConfig.fields[searchFieldName];
+      const fieldConfig = self.state.modelConfig.fields[searchFieldName] || {};
+      fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
 
       // reset search fields' values
       if (fieldConfig.searchInput.defaultValue !== undefined) {
@@ -350,8 +351,9 @@ export default class CrudComponent extends BaseComp {
 
   componentDidMount() { this.handleSearch(); }
 
-  renderSearchInput(fieldConfig, searchFieldName) {
+  renderSearchInput(fieldConfig, searchFieldName, searchField) {
     const self = this;
+    fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
     switch (fieldConfig.searchInput.type) {
       // render select search input
       case 'select':
@@ -362,7 +364,7 @@ export default class CrudComponent extends BaseComp {
             self.handleSearchInputChange(e, fieldConfig, searchFieldName);
             self.refresh();
           }}
-          placeholder={fieldConfig.placeholder} >
+          placeholder={searchField.placeholder || fieldConfig.placeholder} >
           {self.state.searchListDatas[searchFieldName].map((data, j) => <Select.Option
             key={`search-select-field-${j}`}
             value={data[fieldConfig.searchInput.optionValueField || data.title || data]}>
@@ -397,7 +399,7 @@ export default class CrudComponent extends BaseComp {
           ref={(searchFieldCompRef) => { self[`searchFieldCompRef_${searchFieldName}`] = searchFieldCompRef; }}
           onChange={e => self.handleSearchInputChange(e, fieldConfig, searchFieldName)}
           type={fieldConfig.searchInput.type || 'text'}
-          placeholder={fieldConfig.placeholder}
+          placeholder={searchField.placeholder || fieldConfig.placeholder}
           onKeyUp={(e) => {
             if (e.nativeEvent.keyCode === 13) {
               self.handleSearch();
@@ -426,20 +428,20 @@ export default class CrudComponent extends BaseComp {
                 <Row gutter={10}>
                   {self.state.searchFields.map((searchField, i) => {
                     const searchFieldName = searchField.name || searchField;
-                    const fieldConfig = self.state.modelConfig.fields[searchFieldName];
+                    const fieldConfig = self.state.modelConfig.fields[searchFieldName] || {};
                     return fieldConfig ? (
                       <Col span={8}
                         key={`search-field-${i}`}>
                         <Form.Item
                           className="search-panel-form-item"
                           {...searchFormItemLayout}
-                          label={fieldConfig.title || searchFieldName}>
+                          label={fieldConfig.title || searchField.title || searchFieldName}>
 
                           { // if there is render method passed to component display it
                             // else display auto-generated input
                             searchField.render && searchField.render.call ?
                               searchField.render.call(self, self.state.searchCriterias) :
-                              self.renderSearchInput(fieldConfig, searchFieldName)
+                              self.renderSearchInput(fieldConfig, searchFieldName, searchField)
                           }
                         </Form.Item>
                       </Col>
