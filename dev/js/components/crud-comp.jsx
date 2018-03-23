@@ -367,8 +367,8 @@ export default class CrudComponent extends BaseComp {
           placeholder={searchField.placeholder || fieldConfig.placeholder} >
           {self.state.searchListDatas[searchFieldName].map((data, j) => <Select.Option
             key={`search-select-field-${j}`}
-            value={data[fieldConfig.searchInput.optionValueField || data.title || data]}>
-            {data[fieldConfig.searchInput.optionTitleField || data.title || data]}
+            value={data[fieldConfig.searchInput.optionValueField || 'value' || data]}>
+            {data[fieldConfig.searchInput.optionTitleField || 'title' || data]}
           </Select.Option>)}
         </Select>;
       // render checkbox search input
