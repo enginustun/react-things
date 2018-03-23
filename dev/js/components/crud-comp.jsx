@@ -254,6 +254,20 @@ export default class CrudComponent extends BaseComp {
     }
   }
 
+  getSearchCriteriasMap() {
+    const self = this;
+    const searchCriteriaKeys = Object.keys(self.state.searchCriterias);
+    const criterias = {};
+
+    searchCriteriaKeys.forEach((criteriaKey) => {
+      criterias[(self.state.modelConfig.fields[criteriaKey] ?
+        self.state.modelConfig.fields[criteriaKey].map : undefined) || criteriaKey] =
+        self.state.searchCriterias[criteriaKey];
+    });
+
+    return criterias;
+  }
+
   handleSearch() {
     const self = this;
     self.state.tableLoading = true;
@@ -267,7 +281,7 @@ export default class CrudComponent extends BaseComp {
     // send request with current searchCriterias to fill state.tableData with records in response
     self.state.modelClass.all({
       resultList: self.state.tableData,
-      queryParams: self.state.searchCriterias,
+      queryParams: self.getSearchCriteriasMap(),
     }).then(({ response, request }) => {
       self.state.tableLoading = false;
 
