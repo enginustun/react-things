@@ -1,15 +1,22 @@
 /* eslint no-param-reassign: ["error", { "props": false }] */
 /* eslint no-underscore-dangle: ["error", { "allow": ["_bind"] }] */
+/* eslint new-cap: ["error", { "newIsCap": false }] */
 import React from 'react';
 import moment from 'moment';
 import { RestBaseModel } from 'rest-in-model';
-import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider, Popconfirm } from 'antd';
+import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider, Popconfirm, Modal } from 'antd';
 import BaseComp from './base-comp.jsx';
 import helper from '../common/helper';
 
+const { TextArea } = Input;
 // const FormItem = Form.Item;
 
 const searchFormItemLayout = {
+  labelCol: { span: 8 },
+  wrapperCol: { span: 16 },
+};
+
+const addUpdateFormItemLayout = {
   labelCol: { span: 8 },
   wrapperCol: { span: 16 },
 };
@@ -44,6 +51,7 @@ export default class CrudComponent extends BaseComp {
      *  tableSize: string,
      *  totalCountFrom: string,
      *  totalCountField: string,
+     *  addUpdateFields: [],
      *  actionsTitle: string,
      *  actions: {},
      *  customActions: {},
@@ -66,6 +74,10 @@ export default class CrudComponent extends BaseComp {
         [pageAttributeName]: 1,
         [pageLimitAttributeName]: 10,
       },
+
+      addUpdateFields: props.addUpdateFields || [],
+      addUpdateModel: undefined,
+      modalState: { visible: false, type: undefined },
 
       // sort
       sortAttributeName,
@@ -116,8 +128,11 @@ export default class CrudComponent extends BaseComp {
       'handleSearch',
       'handleSearchReset',
       'handleTableChange',
+      'handleAddUpdateInputChange',
       'handleUpdate',
       'handleView',
+      'handleAddUpdateModalCancel',
+      'handleAddUpdateModalSave',
       'handleDelete' // eslint-disable-line comma-dangle
     );
 
@@ -143,6 +158,8 @@ export default class CrudComponent extends BaseComp {
             this.state.searchCriterias[searchFieldName] = fieldConfig.searchInput.defaultValue;
           }
         });
+
+        // TODO: handle addUpdateFields and its initial select/tree values
       }
 
       if (Array.isArray(props.tableColumns)) {
@@ -215,6 +232,7 @@ export default class CrudComponent extends BaseComp {
     if (model && model.constructor === RestBaseModel.constructor) {
       this.state.modelClass = model;
       this.state.modelConfig = this.state.modelClass[`${this.state.modelClass.name}_config`];
+      this.state.addUpdateModel = new this.state.modelClass();
       return true;
     }
     return false;
@@ -354,6 +372,8 @@ export default class CrudComponent extends BaseComp {
   renderSearchInput(fieldConfig, searchFieldName, searchField) {
     const self = this;
     fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
+    const placeholder = searchField.placeholder || fieldConfig.searchInput.placeholder ||
+      fieldConfig.placeholder;
     switch (fieldConfig.searchInput.type) {
       // render select search input
       case 'select':
@@ -364,9 +384,9 @@ export default class CrudComponent extends BaseComp {
             self.handleSearchInputChange(e, fieldConfig, searchFieldName);
             self.refresh();
           }}
-          placeholder={searchField.placeholder || fieldConfig.placeholder} >
+          placeholder={placeholder} >
           {self.state.searchListDatas[searchFieldName].map((data, j) => <Select.Option
-            key={`search-select-field-${j}`}
+            key={data[fieldConfig.searchInput.optionKeyField || 'id'] || data || `search-select-field-${j}`}
             value={data[fieldConfig.searchInput.optionValueField || 'value' || data]}>
             {data[fieldConfig.searchInput.optionTitleField || 'title' || data]}
           </Select.Option>)}
@@ -399,13 +419,86 @@ export default class CrudComponent extends BaseComp {
           ref={(searchFieldCompRef) => { self[`searchFieldCompRef_${searchFieldName}`] = searchFieldCompRef; }}
           onChange={e => self.handleSearchInputChange(e, fieldConfig, searchFieldName)}
           type={fieldConfig.searchInput.type || 'text'}
-          placeholder={searchField.placeholder || fieldConfig.placeholder}
+          placeholder={placeholder}
           onKeyUp={(e) => {
             if (e.nativeEvent.keyCode === 13) {
               self.handleSearch();
             }
           }} />;
     }
+  }
+
+  renderAddUpdateInput(fieldConfig, fieldName, field) {
+    const self = this;
+    let resultField;
+    fieldConfig.addUpdateInput = fieldConfig.addUpdateInput || field || {};
+    const placeholder = field.placeholder || fieldConfig.addUpdateInput.placeholder ||
+      fieldConfig.placeholder;
+    switch (fieldConfig.addUpdateInput.type) {
+      case 'select':
+        resultField = <Select name={fieldName}
+          defaultValue={self.state.addUpdateModel[fieldName]}
+          onChange={(value) => {
+            self.handleAddUpdateInputChange({ target: { value } }, fieldConfig, fieldName);
+          }}
+          placeholder={placeholder}>
+          {fieldConfig.addUpdateInput.data.map((data, i) => <Select.Option
+            key={data[fieldConfig.addUpdateInput.optionKeyField] || i}
+            value={data[fieldConfig.addUpdateInput.optionValueField || 'value' || data]}>
+            {data[fieldConfig.addUpdateInput.optionTitleField || 'title' || data]}
+          </Select.Option>)}
+        </Select>;
+        break;
+      case 'textarea':
+        resultField = <TextArea name={fieldName}
+          defaultValue={self.state.addUpdateModel[fieldName]}
+          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+          placeholder={placeholder} />;
+        break;
+      case 'checkbox':
+        resultField = <Checkbox name={fieldName}
+          value={!self.state.addUpdateModel[fieldName]}
+          style={{ top: '13px' }}
+          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+          placeholder={placeholder} />;
+        break;
+      default:
+        resultField = <Input name={fieldName}
+          defaultValue={self.state.addUpdateModel[fieldName]}
+          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+          type="text"
+          placeholder={placeholder} />;
+        break;
+    }
+    return <div style={{ paddingLeft: '10px' }}>{resultField}</div>;
+  }
+
+  handleAddUpdateInputChange(e, fieldConfig, fieldName) {
+    const self = this;
+    switch (fieldConfig.addUpdateInput.type) {
+      case 'checkbox':
+        self.state.addUpdateModel[fieldName] = e.target.checked;
+        break;
+      case 'number':
+        self.state.addUpdateModel[fieldName] = +e.target.value;
+        break;
+      default:
+        self.state.addUpdateModel[fieldName] = e.target.value;
+        break;
+    }
+
+    console.log(self.state.addUpdateModel, fieldConfig, fieldName, e.target.value);
+  }
+
+  handleAddUpdateModalCancel() {
+    this.state.modalState.type = undefined;
+    this.state.modalState.visible = false;
+    this.refresh();
+  }
+
+  handleAddUpdateModalSave() {
+    const self = this;
+    console.log(self.state.addUpdateModel);
   }
 
   render() {
@@ -469,7 +562,10 @@ export default class CrudComponent extends BaseComp {
             <div className="crud-comp-top-actions">
               <a href="#"
                 onClick={() => {
-                  // todo: open addUpdate modal or form
+                  self.state.addUpdateModel = new this.state.modelClass();
+                  self.state.modalState.type = 'add';
+                  self.state.modalState.visible = true;
+                  self.refresh();
                 }}>
                 <Icon type="plus" />
                 {self.state.actions.add.title || 'Add Record'}
@@ -485,6 +581,30 @@ export default class CrudComponent extends BaseComp {
           bordered={self.props.tableBordered === undefined ? true : self.props.tableBordered}
           size={self.props.tableSize || 'small'} />
       </div>
+
+      {/* Add/Update/View Form */}
+      <Modal title="Add/Update/View Record"
+        visible={self.state.modalState.visible}
+        footer={[
+          <Button key="cancel-button"
+            onClick={self.handleAddUpdateModalCancel}>Cancel</Button>,
+          <Button key="add-update-button"
+            type="primary"
+            onClick={self.handleAddUpdateModalSave}>Save</Button>,
+        ]}
+        onCancel={self.handleAddUpdateModalCancel}>
+        <Form key={self.state.addUpdateModel.id}>
+          {self.state.addUpdateFields.map((field, i) => {
+            const fieldName = field.name || field;
+            const fieldConfig = self.state.modelConfig.fields[fieldName] || {};
+            return <Form.Item key={i}
+              {...addUpdateFormItemLayout}
+              label={fieldConfig.title || fieldName}>
+              {self.renderAddUpdateInput(fieldConfig, fieldName, field)}
+            </Form.Item>;
+          })}
+        </Form>
+      </Modal>
     </div>);
   }
 }
