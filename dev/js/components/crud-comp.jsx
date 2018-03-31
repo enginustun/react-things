@@ -4,7 +4,7 @@
 import React from 'react';
 import moment from 'moment';
 import { RestBaseModel } from 'rest-in-model';
-import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider, Popconfirm, Modal } from 'antd';
+import { Form, Row, Col, Input, Button, Icon, Select, Checkbox, DatePicker, Table, Divider, Popconfirm, Modal, message } from 'antd';
 import BaseComp from './base-comp.jsx';
 import helper from '../common/helper';
 
@@ -176,7 +176,7 @@ export default class CrudComponent extends BaseComp {
           this.state.tableColumns.push(columnInfo);
         }
         const customActionKeys = Object.keys(this.state.customActions);
-        const actionsRender = (record) => {
+        const actionsRender = (text, record) => {
           const actionKeys = Object.keys(this.state.actions).filter(key =>
             key !== 'add' || availableActionKeys.indexOf(key) > -1);
           return <div>
@@ -238,19 +238,33 @@ export default class CrudComponent extends BaseComp {
     return false;
   }
 
-  handleUpdate() {
+  handleUpdate(record) {
     const self = this;
-    console.log('handle update', self);
+    self.state.addUpdateModel = record;
+    self.state.modalState.type = 'update';
+    self.state.modalState.visible = true;
+    self.refresh();
   }
 
-  handleView() {
+  handleView(record) {
     const self = this;
-    console.log('handle view', self);
+    self.state.addUpdateModel = record;
+    self.state.modalState.type = 'list';
+    self.state.modalState.visible = true;
+    self.refresh();
   }
 
-  handleDelete() {
+  handleDelete(record) {
     const self = this;
-    console.log('handle delete', self);
+    record.delete()
+      .then(() => {
+        message.success('The record has been successfully deleted.');
+        self.handleSearch();
+      })
+      .catch((err) => {
+        message.error('An error occured while saving record.');
+        console.error(err);
+      });
   }
 
   handleSearchInputChange(e, fieldConfig, searchFieldName) {
@@ -434,41 +448,49 @@ export default class CrudComponent extends BaseComp {
     fieldConfig.addUpdateInput = fieldConfig.addUpdateInput || field || {};
     const placeholder = field.placeholder || fieldConfig.addUpdateInput.placeholder ||
       fieldConfig.placeholder;
-    switch (fieldConfig.addUpdateInput.type) {
-      case 'select':
-        resultField = <Select name={fieldName}
-          defaultValue={self.state.addUpdateModel[fieldName]}
-          onChange={(value) => {
-            self.handleAddUpdateInputChange({ target: { value } }, fieldConfig, fieldName);
-          }}
-          placeholder={placeholder}>
-          {fieldConfig.addUpdateInput.data.map((data, i) => <Select.Option
-            key={data[fieldConfig.addUpdateInput.optionKeyField] || i}
-            value={data[fieldConfig.addUpdateInput.optionValueField || 'value' || data]}>
-            {data[fieldConfig.addUpdateInput.optionTitleField || 'title' || data]}
-          </Select.Option>)}
-        </Select>;
-        break;
-      case 'textarea':
-        resultField = <TextArea name={fieldName}
-          defaultValue={self.state.addUpdateModel[fieldName]}
-          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
-          placeholder={placeholder} />;
-        break;
-      case 'checkbox':
-        resultField = <Checkbox name={fieldName}
-          value={!self.state.addUpdateModel[fieldName]}
-          style={{ top: '13px' }}
-          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
-          placeholder={placeholder} />;
-        break;
-      default:
-        resultField = <Input name={fieldName}
-          defaultValue={self.state.addUpdateModel[fieldName]}
-          onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
-          type="text"
-          placeholder={placeholder} />;
-        break;
+    if (self.state.modalState.type === 'list') {
+      if (field.viewRender && field.viewRender.call) {
+        resultField = field.viewRender.call(self, self.state.addUpdateModel);
+      } else {
+        resultField = self.state.addUpdateModel[fieldName];
+      }
+    } else {
+      switch (fieldConfig.addUpdateInput.type) {
+        case 'select':
+          resultField = <Select name={fieldName}
+            defaultValue={self.state.addUpdateModel[fieldName]}
+            onChange={(value) => {
+              self.handleAddUpdateInputChange({ target: { value } }, fieldConfig, fieldName);
+            }}
+            placeholder={placeholder}>
+            {fieldConfig.addUpdateInput.data.map((data, i) => <Select.Option
+              key={data[fieldConfig.addUpdateInput.optionKeyField] || i}
+              value={data[fieldConfig.addUpdateInput.optionValueField || 'value' || data]}>
+              {data[fieldConfig.addUpdateInput.optionTitleField || 'title' || data]}
+            </Select.Option>)}
+          </Select>;
+          break;
+        case 'textarea':
+          resultField = <TextArea name={fieldName}
+            defaultValue={self.state.addUpdateModel[fieldName]}
+            onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+            placeholder={placeholder} />;
+          break;
+        case 'checkbox':
+          resultField = <Checkbox name={fieldName}
+            value={!self.state.addUpdateModel[fieldName]}
+            style={{ top: '13px' }}
+            onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+            placeholder={placeholder} />;
+          break;
+        default:
+          resultField = <Input name={fieldName}
+            defaultValue={self.state.addUpdateModel[fieldName]}
+            onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
+            type="text"
+            placeholder={placeholder} />;
+          break;
+      }
     }
     return <div style={{ paddingLeft: '10px' }}>{resultField}</div>;
   }
@@ -486,8 +508,6 @@ export default class CrudComponent extends BaseComp {
         self.state.addUpdateModel[fieldName] = e.target.value;
         break;
     }
-
-    console.log(self.state.addUpdateModel, fieldConfig, fieldName, e.target.value);
   }
 
   handleAddUpdateModalCancel() {
@@ -498,7 +518,26 @@ export default class CrudComponent extends BaseComp {
 
   handleAddUpdateModalSave() {
     const self = this;
-    console.log(self.state.addUpdateModel);
+    self.state.addUpdateModel
+      .save()
+      .then(() => {
+        if (self.state.modalState.type === 'add') {
+          self.state.addUpdateModel = new this.state.modelClass();
+          message.success('New record has been successfully added.');
+        } else {
+          message.success('The record has been successfully updated.');
+        }
+        self.handleAddUpdateModalCancel();
+        self.handleSearch();
+      })
+      .catch((err) => {
+        message.error('An error occured while saving record.');
+        console.error(err);
+      });
+  }
+
+  getAddUpdateModalTitle() {
+    return helper.getMatchedWord(this.state.modalState.type, ['add', 'update', 'list'], ['Add Record', 'Update Record', 'View Record']);
   }
 
   render() {
@@ -583,7 +622,7 @@ export default class CrudComponent extends BaseComp {
       </div>
 
       {/* Add/Update/View Form */}
-      <Modal title="Add/Update/View Record"
+      <Modal title={self.getAddUpdateModalTitle()}
         visible={self.state.modalState.visible}
         footer={[
           <Button key="cancel-button"
@@ -600,7 +639,11 @@ export default class CrudComponent extends BaseComp {
             return <Form.Item key={i}
               {...addUpdateFormItemLayout}
               label={fieldConfig.title || fieldName}>
-              {self.renderAddUpdateInput(fieldConfig, fieldName, field)}
+              {
+                field.render && field.render.call ?
+                  field.render.call(self, self.state.addUpdateModel) :
+                  self.renderAddUpdateInput(fieldConfig, fieldName, field)
+              }
             </Form.Item>;
           })}
         </Form>
