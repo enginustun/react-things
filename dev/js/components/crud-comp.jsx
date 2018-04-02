@@ -249,7 +249,7 @@ export default class CrudComponent extends BaseComp {
   handleView(record) {
     const self = this;
     self.state.addUpdateModel = record;
-    self.state.modalState.type = 'list';
+    self.state.modalState.type = 'view';
     self.state.modalState.visible = true;
     self.refresh();
   }
@@ -383,6 +383,10 @@ export default class CrudComponent extends BaseComp {
 
   componentDidMount() { this.handleSearch(); }
 
+  isModalType(type) {
+    return this.state.modalState.type === type;
+  }
+
   renderSearchInput(fieldConfig, searchFieldName, searchField) {
     const self = this;
     fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
@@ -448,7 +452,7 @@ export default class CrudComponent extends BaseComp {
     fieldConfig.addUpdateInput = fieldConfig.addUpdateInput || field || {};
     const placeholder = field.placeholder || fieldConfig.addUpdateInput.placeholder ||
       fieldConfig.placeholder;
-    if (self.state.modalState.type === 'list') {
+    if (self.isModalType('view')) {
       if (field.viewRender && field.viewRender.call) {
         resultField = field.viewRender.call(self, self.state.addUpdateModel);
       } else {
@@ -511,7 +515,6 @@ export default class CrudComponent extends BaseComp {
   }
 
   handleAddUpdateModalCancel() {
-    this.state.modalState.type = undefined;
     this.state.modalState.visible = false;
     this.refresh();
   }
@@ -521,7 +524,7 @@ export default class CrudComponent extends BaseComp {
     self.state.addUpdateModel
       .save()
       .then(() => {
-        if (self.state.modalState.type === 'add') {
+        if (self.isModalType('add')) {
           self.state.addUpdateModel = new this.state.modelClass();
           message.success('New record has been successfully added.');
         } else {
@@ -537,7 +540,7 @@ export default class CrudComponent extends BaseComp {
   }
 
   getAddUpdateModalTitle() {
-    return helper.getMatchedWord(this.state.modalState.type, ['add', 'update', 'list'], ['Add Record', 'Update Record', 'View Record']);
+    return helper.getMatchedWord(this.state.modalState.type, ['add', 'update', 'view'], ['Add Record', 'Update Record', 'View Record']);
   }
 
   render() {
@@ -624,19 +627,21 @@ export default class CrudComponent extends BaseComp {
       {/* Add/Update/View Form */}
       <Modal title={self.getAddUpdateModalTitle()}
         visible={self.state.modalState.visible}
-        footer={[
+        footer={!self.isModalType('view') ? [
           <Button key="cancel-button"
             onClick={self.handleAddUpdateModalCancel}>Cancel</Button>,
           <Button key="add-update-button"
             type="primary"
             onClick={self.handleAddUpdateModalSave}>Save</Button>,
-        ]}
+        ] : null}
         onCancel={self.handleAddUpdateModalCancel}>
         <Form key={self.state.addUpdateModel.id}>
           {self.state.addUpdateFields.map((field, i) => {
             const fieldName = field.name || field;
             const fieldConfig = self.state.modelConfig.fields[fieldName] || {};
-            return <Form.Item key={i}
+            const exclude = Array.isArray(field.exclude) &&
+              field.exclude.indexOf(self.state.modalState.type) > -1;
+            return !exclude ? <Form.Item key={i}
               {...addUpdateFormItemLayout}
               label={fieldConfig.title || fieldName}>
               {
@@ -644,7 +649,7 @@ export default class CrudComponent extends BaseComp {
                   field.render.call(self, self.state.addUpdateModel) :
                   self.renderAddUpdateInput(fieldConfig, fieldName, field)
               }
-            </Form.Item>;
+            </Form.Item> : null;
           })}
         </Form>
       </Modal>
