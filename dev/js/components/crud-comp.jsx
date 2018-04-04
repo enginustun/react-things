@@ -109,6 +109,9 @@ export default class CrudComponent extends BaseComp {
       actions: props.actions || {},
       customActions: props.customActions || {},
       customTopActions: props.customTopActions || {},
+
+      // add/update request state
+      requestPending: false,
     };
 
     if (hasProperty(props, 'pageSizeOptions')) {
@@ -525,6 +528,10 @@ export default class CrudComponent extends BaseComp {
     const self = this;
     const saveFields = [];
     const saveMethod = {};
+
+    // turn button state into 'loading'
+    self.refresh({ requestPending: true });
+
     self.state.addUpdateFields.forEach((field) => {
       const visible = helper.is.function(field.visible) ?
         field.visible.call(self, self.state.addUpdateModel) : true;
@@ -534,6 +541,7 @@ export default class CrudComponent extends BaseComp {
         saveFields.push(field.name || field);
       }
     });
+
     if (self.props.updateMethod === 'patch') {
       saveMethod.patch = saveFields;
     }
@@ -547,11 +555,15 @@ export default class CrudComponent extends BaseComp {
         } else {
           message.success('The record has been successfully updated.');
         }
+        // remove 'loading' state of button
+        self.state.requestPending = false;
         self.handleAddUpdateModalCancel();
         self.handleSearch();
       })
       .catch((err) => {
         message.error('An error occured while saving record.');
+        // remove 'loading' state of button
+        self.refresh({ requestPending: false });
         console.error(err);
       });
   }
@@ -648,6 +660,7 @@ export default class CrudComponent extends BaseComp {
           <Button key="cancel-button"
             onClick={self.handleAddUpdateModalCancel}>Cancel</Button>,
           <Button key="add-update-button"
+            loading={self.state.requestPending}
             type="primary"
             onClick={self.handleAddUpdateModalSave}>Save</Button>,
         ] : null}
