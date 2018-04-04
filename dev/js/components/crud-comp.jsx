@@ -512,6 +512,7 @@ export default class CrudComponent extends BaseComp {
         self.state.addUpdateModel[fieldName] = e.target.value;
         break;
     }
+    self.refresh();
   }
 
   handleAddUpdateModalCancel() {
@@ -641,7 +642,9 @@ export default class CrudComponent extends BaseComp {
             const fieldConfig = self.state.modelConfig.fields[fieldName] || {};
             const exclude = Array.isArray(field.exclude) &&
               field.exclude.indexOf(self.state.modalState.type) > -1;
-            return !exclude ? <Form.Item key={i}
+            const visible = helper.is.function(field.visible) ?
+              field.visible.call(self, self.state.addUpdateModel) : true;
+            return !exclude && visible ? <Form.Item key={i}
               {...addUpdateFormItemLayout}
               label={fieldConfig.title || fieldName}>
               {
