@@ -55,7 +55,8 @@ export default class CrudComponent extends BaseComp {
      *  actionsTitle: string,
      *  actions: {},
      *  customActions: {},
-     *  customTopActions: {}
+     *  customTopActions: {},
+     *  updateMethod: string
      * }
      */
 
@@ -522,8 +523,23 @@ export default class CrudComponent extends BaseComp {
 
   handleAddUpdateModalSave() {
     const self = this;
+    const saveFields = [];
+    const saveMethod = {};
+    self.state.addUpdateFields.forEach((field) => {
+      const visible = helper.is.function(field.visible) ?
+        field.visible.call(self, self.state.addUpdateModel) : true;
+      const exclude = Array.isArray(field.exclude) &&
+        field.exclude.indexOf(self.state.modalState.type) > -1;
+      if (!exclude && visible) {
+        saveFields.push(field.name || field);
+      }
+    });
+    if (self.props.updateMethod === 'patch') {
+      saveMethod.patch = saveFields;
+    }
+
     self.state.addUpdateModel
-      .save()
+      .save(saveMethod)
       .then(() => {
         if (self.isModalType('add')) {
           self.state.addUpdateModel = new this.state.modelClass();
