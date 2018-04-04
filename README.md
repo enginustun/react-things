@@ -71,6 +71,8 @@ Then we only need to specify which fields we want to show in Search Panel throug
 ```javascript
 <CRUDComponent
     model={Post}
+    // update method can be defined as 'patch' otherwise it will be 'put' as default.
+    updateMethod="patch"
     searchTitle="Search Criterias"
     searchFields={[
       'title',
@@ -93,8 +95,9 @@ The result will be as follow:
 `tableColumns` property should be defined to show fields in table for model which is specified in model property.
 
 ```javascript
-<CRUDComponent 
+<CRUDComponent
       model={Post}
+      updateMethod="patch"
       searchTitle=...
       searchFields=...
 
