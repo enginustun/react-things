@@ -11,4 +11,20 @@ module.exports = {
     const textIndex = textArray.indexOf(text);
     return textIndex > -1 ? wordArray[textIndex] : text;
   },
+
+  /**
+   * Check if parameter is something specifically asked
+   */
+  is: {
+    function: fn => typeof fn === 'function',
+    object: (obj, strictCheck) => {
+      let result = false;
+      if (!strictCheck) {
+        result = obj === Object(obj);
+      } else {
+        result = Object.prototype.toString.call(obj) === '[object Object]';
+      }
+      return result;
+    },
+  },
 };
