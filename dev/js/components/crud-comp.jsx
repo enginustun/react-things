@@ -453,7 +453,7 @@ export default class CrudComponent extends BaseComp {
     const placeholder = field.placeholder || fieldConfig.addUpdateInput.placeholder ||
       fieldConfig.placeholder;
     if (self.isModalType('view')) {
-      if (field.viewRender && field.viewRender.call) {
+      if (helper.is.function(field.viewRender)) {
         resultField = field.viewRender.call(self, self.state.addUpdateModel);
       } else {
         resultField = self.state.addUpdateModel[fieldName];
@@ -575,7 +575,7 @@ export default class CrudComponent extends BaseComp {
 
                           { // if there is render method passed to component display it
                             // else display auto-generated input
-                            searchField.render && searchField.render.call ?
+                            helper.is.function(searchField.render) ?
                               searchField.render.call(self, self.state.searchCriterias) :
                               self.renderSearchInput(fieldConfig, searchFieldName, searchField)
                           }
@@ -648,7 +648,7 @@ export default class CrudComponent extends BaseComp {
               {...addUpdateFormItemLayout}
               label={fieldConfig.title || fieldName}>
               {
-                field.render && field.render.call ?
+                helper.is.function(field.render) ?
                   field.render.call(self, self.state.addUpdateModel) :
                   self.renderAddUpdateInput(fieldConfig, fieldName, field)
               }
