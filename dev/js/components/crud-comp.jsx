@@ -56,7 +56,8 @@ export default class CrudComponent extends BaseComp {
      *  actions: {},
      *  customActions: {},
      *  customTopActions: {},
-     *  updateMethod: string
+     *  updateMethod: string,
+     *  hidePaginationOnSinglePage: boolean
      * }
      */
 
@@ -100,6 +101,7 @@ export default class CrudComponent extends BaseComp {
         pageSize: 10,
         pageSizeOptions: ['10', '25', '50'],
         total: 0,
+        hideOnSinglePage: props.hidePaginationOnSinglePage || true,
       },
 
       tableLoading: false,
