@@ -151,7 +151,9 @@ export default class CrudComponent extends BaseComp {
         this.state.searchFields.forEach((searchField) => {
           const searchFieldName = searchField.name || searchField;
           const fieldConfig = this.state.modelConfig.fields[searchFieldName] || {};
-          fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
+          fieldConfig.searchInput =
+            Object.assign({
+            }, fieldConfig.searchInput, helper.is.object(searchField) ? searchField : {});
 
           if (fieldConfig.searchInput.type === 'select') {
             if (fieldConfig.searchInput.dataSource) {
@@ -160,10 +162,8 @@ export default class CrudComponent extends BaseComp {
               this.state.searchListDatas[searchFieldName] = fieldConfig.searchInput.data || [];
             }
           }
-          if (fieldConfig.searchInput.defaultValue !== undefined) {
-            this.state.searchCriterias[searchFieldName] = fieldConfig.searchInput.defaultValue;
-          }
         });
+        this.handleSearchReset(true);
 
         // TODO: handle addUpdateFields and its initial select/tree values
       }
@@ -336,7 +336,7 @@ export default class CrudComponent extends BaseComp {
     });
   }
 
-  handleSearchReset() {
+  handleSearchReset(dontSearch) {
     const self = this;
 
     // reset curren page to 1
@@ -348,23 +348,24 @@ export default class CrudComponent extends BaseComp {
       [self.state.pageLimitAttributeName]: self.state.tablePagination.pageSize,
     };
 
+    // merge query parameters with filter criterias
+    Object.assign(self.state.searchCriterias, self.props.queryParams);
+
     self.state.searchFields.forEach((searchField) => {
       const searchFieldName = searchField.name || searchField;
       const fieldConfig = self.state.modelConfig.fields[searchFieldName] || {};
-      fieldConfig.searchInput = fieldConfig.searchInput || searchField || {};
+      fieldConfig.searchInput =
+        Object.assign({
+        }, fieldConfig.searchInput, helper.is.object(searchField) ? searchField : {});
 
       // reset search fields' values
       if (fieldConfig.searchInput.defaultValue !== undefined) {
-        this.state.searchCriterias[searchFieldName] = fieldConfig.searchInput.defaultValue;
-      }
-      if (self[`searchFieldCompRef_${searchFieldName}`]) {
-        const { input } = self[`searchFieldCompRef_${searchFieldName}`];
-        if (input) {
-          input.value = '';
-        }
+        self.state.searchCriterias[searchFieldName] = fieldConfig.searchInput.defaultValue;
       }
     });
-    self.handleSearch();
+    if (!dontSearch) {
+      self.handleSearch();
+    }
   }
 
   handleTableChange(pagination, filters, sorter) {
@@ -441,7 +442,11 @@ export default class CrudComponent extends BaseComp {
       default:
         return <Input
           ref={(searchFieldCompRef) => { self[`searchFieldCompRef_${searchFieldName}`] = searchFieldCompRef; }}
-          onChange={e => self.handleSearchInputChange(e, fieldConfig, searchFieldName)}
+          value={self.state.searchCriterias[searchFieldName]}
+          onChange={(e) => {
+            self.handleSearchInputChange(e, fieldConfig, searchFieldName);
+            self.refresh();
+          }}
           type={fieldConfig.searchInput.type || 'text'}
           placeholder={placeholder}
           onKeyUp={(e) => {
@@ -621,7 +626,7 @@ export default class CrudComponent extends BaseComp {
                         self.state.tablePagination.current = 1;
                         self.handleSearch();
                       }}><Icon type="search" /> Search</Button>
-                    <Button className="mr10" onClick={self.handleSearchReset}><Icon type="reload" /> Reset</Button>
+                    <Button className="mr10" onClick={() => { self.handleSearchReset(); }}><Icon type="reload" /> Reset</Button>
                   </Col>
                 </Row>
               </Form>
