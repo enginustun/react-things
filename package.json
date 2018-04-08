@@ -39,6 +39,6 @@
     "moment": "^2.21.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0",
-    "rest-in-model": "^1.0.4"
+    "rest-in-model": "^1.0.8"
   }
 }
