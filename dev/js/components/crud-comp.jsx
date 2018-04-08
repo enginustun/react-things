@@ -79,7 +79,7 @@ export default class CrudComponent extends BaseComp {
 
       addUpdateFields: props.addUpdateFields || [],
       addUpdateModel: undefined,
-      modalState: { visible: false, type: undefined },
+      modalState: { visible: false, type: undefined, instance: 0 },
 
       // sort
       sortAttributeName,
@@ -246,17 +246,19 @@ export default class CrudComponent extends BaseComp {
 
   handleUpdate(record) {
     const self = this;
-    self.state.addUpdateModel = record;
+    self.state.addUpdateModel = new this.state.modelClass(record);
     self.state.modalState.type = 'update';
     self.state.modalState.visible = true;
+    self.state.modalState.instance += 1;
     self.refresh();
   }
 
   handleView(record) {
     const self = this;
-    self.state.addUpdateModel = record;
+    self.state.addUpdateModel = new this.state.modelClass(record);
     self.state.modalState.type = 'view';
     self.state.modalState.visible = true;
+    self.state.modalState.instance += 1;
     self.refresh();
   }
 
@@ -470,10 +472,12 @@ export default class CrudComponent extends BaseComp {
         resultField = self.state.addUpdateModel[fieldName];
       }
     } else {
+      const defaultValue = self.state.addUpdateModel[fieldName] === null ?
+        undefined : self.state.addUpdateModel[fieldName];
       switch (fieldConfig.addUpdateInput.type) {
         case 'select':
           resultField = <Select name={fieldName}
-            defaultValue={self.state.addUpdateModel[fieldName]}
+            defaultValue={defaultValue}
             onChange={(value) => {
               self.handleAddUpdateInputChange({ target: { value } }, fieldConfig, fieldName);
             }}
@@ -487,20 +491,20 @@ export default class CrudComponent extends BaseComp {
           break;
         case 'textarea':
           resultField = <TextArea name={fieldName}
-            defaultValue={self.state.addUpdateModel[fieldName]}
+            defaultValue={defaultValue}
             onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
             placeholder={placeholder} />;
           break;
         case 'checkbox':
           resultField = <Checkbox name={fieldName}
-            value={!self.state.addUpdateModel[fieldName]}
+            defaultChecked={defaultValue}
             style={{ top: '13px' }}
             onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
             placeholder={placeholder} />;
           break;
         default:
           resultField = <Input name={fieldName}
-            defaultValue={self.state.addUpdateModel[fieldName]}
+            defaultValue={defaultValue}
             onChange={(e) => { self.handleAddUpdateInputChange(e, fieldConfig, fieldName); }}
             type="text"
             placeholder={placeholder} />;
@@ -534,14 +538,16 @@ export default class CrudComponent extends BaseComp {
   handleAddUpdateModalSave() {
     const self = this;
     const saveFields = [];
-    const saveMethod = {};
+    const saveMethod = {
+      updateMethod: self.props.updateMethod || 'put',
+    };
 
     // turn button state into 'loading'
     self.refresh({ requestPending: true });
 
     self.state.addUpdateFields.forEach((field) => {
       const visible = helper.is.function(field.visible) ?
-        field.visible.call(self, self.state.addUpdateModel) : true;
+        field.visible.call(self, self.state.addUpdateModel) === true : true;
       const exclude = Array.isArray(field.exclude) &&
         field.exclude.indexOf(self.state.modalState.type) > -1;
       if (!exclude && visible) {
@@ -549,9 +555,7 @@ export default class CrudComponent extends BaseComp {
       }
     });
 
-    if (self.props.updateMethod === 'patch') {
-      saveMethod.patch = saveFields;
-    }
+    saveMethod.dataKeys = saveFields;
 
     self.state.addUpdateModel
       .save(saveMethod)
@@ -643,6 +647,7 @@ export default class CrudComponent extends BaseComp {
                   self.state.addUpdateModel = new this.state.modelClass();
                   self.state.modalState.type = 'add';
                   self.state.modalState.visible = true;
+                  self.state.modalState.instance += 1;
                   self.refresh();
                 }}>
                 <Icon type="plus" />
@@ -672,7 +677,7 @@ export default class CrudComponent extends BaseComp {
             onClick={self.handleAddUpdateModalSave}>Save</Button>,
         ] : null}
         onCancel={self.handleAddUpdateModalCancel}>
-        <Form key={self.state.addUpdateModel.id}>
+        <Form key={self.state.modalState.instance}>
           {self.state.addUpdateFields.map((field, i) => {
             const fieldName = field.name || field;
             const fieldConfig = self.state.modelConfig.fields[fieldName] || {};
