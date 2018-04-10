@@ -530,7 +530,15 @@ export default class CrudComponent extends BaseComp {
     self.refresh();
   }
 
-  handleAddUpdateModalCancel() {
+  handleAddUpdateModalCancel(manual) {
+    if (manual) {
+      if (this.isModalType('add') && helper.is.function(this.props.cancelAdd)) {
+        this.props.cancelAdd.call(this, this.state.addUpdateModel);
+      }
+      if (this.isModalType('update') && helper.is.function(this.props.cancelUpdate)) {
+        this.props.cancelUpdate.call(this, this.state.addUpdateModel);
+      }
+    }
     this.state.modalState.visible = false;
     this.refresh();
   }
@@ -557,13 +565,25 @@ export default class CrudComponent extends BaseComp {
 
     saveMethod.dataKeys = saveFields;
 
+    if (self.isModalType('add') && helper.is.function(self.props.beforeAdd)) {
+      self.props.beforeAdd.call(self, self.state.addUpdateModel);
+    }
+    if (self.isModalType('update') && helper.is.function(self.props.beforeUpdate)) {
+      self.props.beforeUpdate.call(self, self.state.addUpdateModel);
+    }
     self.state.addUpdateModel
       .save(saveMethod)
       .then(() => {
         if (self.isModalType('add')) {
+          if (helper.is.function(self.props.afterAdd)) {
+            self.props.afterAdd.call(self, self.state.addUpdateModel);
+          }
           self.state.addUpdateModel = new this.state.modelClass();
           message.success('New record has been successfully added.');
         } else {
+          if (helper.is.function(self.props.afterUpdate)) {
+            self.props.afterUpdate.call(self, self.state.addUpdateModel);
+          }
           message.success('The record has been successfully updated.');
         }
         // remove 'loading' state of button
@@ -670,13 +690,13 @@ export default class CrudComponent extends BaseComp {
         visible={self.state.modalState.visible}
         footer={!self.isModalType('view') ? [
           <Button key="cancel-button"
-            onClick={self.handleAddUpdateModalCancel}>Cancel</Button>,
+            onClick={() => { self.handleAddUpdateModalCancel(true); }}>Cancel</Button>,
           <Button key="add-update-button"
             loading={self.state.requestPending}
             type="primary"
             onClick={self.handleAddUpdateModalSave}>Save</Button>,
         ] : null}
-        onCancel={self.handleAddUpdateModalCancel}>
+        onCancel={() => { self.handleAddUpdateModalCancel(true); }}>
         <Form key={self.state.modalState.instance}>
           {self.state.addUpdateFields.map((field, i) => {
             const fieldName = field.name || field;
