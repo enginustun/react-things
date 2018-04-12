@@ -681,6 +681,8 @@ export default class CrudComponent extends BaseComp {
           dataSource={self.state.tableData}
           columns={self.state.tableColumns}
           onChange={self.handleTableChange}
+          expandedRowRender={self.props.tableExpandedRow}
+          rowClassName={self.props.tableRowClassName}
           bordered={self.props.tableBordered === undefined ? true : self.props.tableBordered}
           size={self.props.tableSize || 'small'} />
       </div>
