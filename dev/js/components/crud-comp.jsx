@@ -329,7 +329,7 @@ export default class CrudComponent extends BaseComp {
       if (self.state.totalCountFrom === 'header') {
         self.state.tablePagination.total = +request.getResponseHeader(self.state.totalCountField);
       } else if (self.state.totalCountFrom === 'response') {
-        self.state.tablePagination.total = +response(self.state.totalCountField);
+        self.state.tablePagination.total = +response[self.state.totalCountField];
       }
       self.refresh();
     }).catch(() => {
